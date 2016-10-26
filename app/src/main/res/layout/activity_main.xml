@@ -5,7 +5,8 @@
     android:layout_gravity="center"
 
     tools:context="com.bijibiji.mgp.MainActivity"
-    android:clickable="true">
+    android:clickable="true"
+    android:id="@+id/frame_layout">
 
     <TextView
         android:layout_width="1dp"

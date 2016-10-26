@@ -2,17 +2,21 @@ package com.bijibiji.mgp;
 
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
 
@@ -23,9 +27,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 
 import net.rohbot.webtest.R;
 
-import java.io.Serializable;
-
-public class MainActivity extends Activity implements Serializable {
+public class MainActivity extends Activity {
 
     private static final String TOPIC = "vidloopa";
 
@@ -48,6 +50,14 @@ public class MainActivity extends Activity implements Serializable {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        FrameLayout layout = (FrameLayout)findViewById(R.id.frame_layout);
+        layout.setOnLongClickListener(new View.OnLongClickListener() {
+            public boolean onLongClick(View arg0) {
+                openOptionsMenu();
+                return true;
+            }
+        });
 
         consoleTxt = (TextView) findViewById(R.id.txtConsole);
         connect();
@@ -102,10 +112,15 @@ public class MainActivity extends Activity implements Serializable {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
+    public static void refreshMenu(Activity activity)
+    {
+        activity.invalidateOptionsMenu();
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items"localhost" to the action bar if it is present.
-
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }

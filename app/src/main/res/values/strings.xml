@@ -4,5 +4,9 @@
     <string name="app_name">VidLoopa</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="change_ip_setting">Change IP address</string>
+    <string name="change_ip_address">Change IP address</string>
+    <string name="ip_address">tcp://192.168.100.109:8889</string>
+    <string name="connect">Connect</string>
 
 </resources>

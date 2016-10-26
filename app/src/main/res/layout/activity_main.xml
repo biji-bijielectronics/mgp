@@ -4,7 +4,8 @@
     android:layout_height="fill_parent"
     android:layout_gravity="center"
 
-    tools:context="com.bijibiji.mgp.MainActivity" >
+    tools:context="com.bijibiji.mgp.MainActivity"
+    android:clickable="true">
 
     <TextView
         android:layout_width="1dp"
@@ -12,10 +13,11 @@
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:id="@+id/txtConsole"
         android:layout_gravity="center_horizontal|top" />
+
     <VideoView
         android:id="@+id/videoView"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="match_parent"
         android:layout_alignParentRight="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"

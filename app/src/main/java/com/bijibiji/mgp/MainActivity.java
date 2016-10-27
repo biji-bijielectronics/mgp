@@ -1,5 +1,8 @@
 package com.bijibiji.mgp;
 
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -16,8 +19,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.VideoView;
 
 import com.google.android.gms.appindexing.Action;
@@ -27,16 +30,23 @@ import com.google.android.gms.common.api.GoogleApiClient;
 
 import net.rohbot.webtest.R;
 
+import java.net.URISyntaxException;
+
+import static android.content.ContentValues.TAG;
+
 public class MainActivity extends Activity {
 
     private static final String TOPIC = "vidloopa";
 
     private TextView consoleTxt;
+    private Uri localVideo;
     private Uri video1;
     private Uri video2;
     private Uri currentVideo;
     private VideoView myVideoView;
     private int position = 0;
+
+    private static final int FILE_SELECT_CODE = 0;
 
     private String ip = "tcp://192.168.100.109:8889";
     private EditText ip_address;
@@ -50,6 +60,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //showFileChooser();
 
         FrameLayout layout = (FrameLayout)findViewById(R.id.frame_layout);
         layout.setOnLongClickListener(new View.OnLongClickListener() {
@@ -112,12 +123,6 @@ public class MainActivity extends Activity {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
-    public static void refreshMenu(Activity activity)
-    {
-        activity.invalidateOptionsMenu();
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items"localhost" to the action bar if it is present.
@@ -137,13 +142,13 @@ public class MainActivity extends Activity {
 
             connectButton.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    // System.out.println(ip_address.getText().toString());
                     ip = ip_address.getText().toString();
                     onCreate(new Bundle());
-                    System.out.println(ip);
                 }
             });
 
+        } else if (id == R.id.file_chooser) {
+            showFileChooser();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -175,6 +180,13 @@ public class MainActivity extends Activity {
             myVideoView.seekTo(0);
             myVideoView.stopPlayback();
         }
+        if (msg.equals("localFile")) {
+            currentVideo = localVideo;
+            myVideoView.setVideoURI(currentVideo);
+            myVideoView.seekTo(0);
+            myVideoView.start();
+        }
+
     }
 
     @SuppressLint("HandlerLeak")
@@ -189,7 +201,7 @@ public class MainActivity extends Activity {
 
     public void connect() {
         //consoleTxt.setText("Connecting to MQ");
-        new Thread(new ZeroMQListener(handler, "tcp://192.168.0.38:8889", TOPIC)).start();
+        new Thread(new ZeroMQListener(handler, ip, TOPIC)).start();
         //new Thread(new ZeroMQListener(handler,"tcp://rohbot.net:8889",TOPIC)).start();
 
     }
@@ -229,5 +241,69 @@ public class MainActivity extends Activity {
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
+    }
+
+    private void showFileChooser() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        try {
+            startActivityForResult(
+                    Intent.createChooser(intent, "Select a File to Upload"),
+                    FILE_SELECT_CODE);
+        } catch (android.content.ActivityNotFoundException ex) {
+            // Potentially direct the user to the Market with a Dialog
+            Toast.makeText(this, "Please install a File Manager.",
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case FILE_SELECT_CODE:
+                if (resultCode == RESULT_OK) {
+                    // Get the Uri of the selected file
+                    localVideo = data.getData();
+                    Log.d(TAG, "File Uri: " + localVideo.toString());
+                    // Get the path
+                    String path = null;
+                    try {
+                        path = getPath(this, localVideo);
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+                    Log.d(TAG, "File Path: " + path);
+                    // Get the file instance
+                    // File file = new File(path);
+                    serverMessageReceived("localVideo");
+                    // Initiate the upload
+                }
+                break;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public static String getPath(Context context, Uri uri) throws URISyntaxException {
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            String[] projection = { "_data" };
+            Cursor cursor = null;
+
+            try {
+                cursor = context.getContentResolver().query(uri, projection, null, null, null);
+                int column_index = cursor.getColumnIndexOrThrow("_data");
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(column_index);
+                }
+            } catch (Exception e) {
+                // Eat it
+            }
+        }
+        else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+
+        return null;
     }
 }
